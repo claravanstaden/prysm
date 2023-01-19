@@ -36,6 +36,7 @@ type StateProver interface {
 	FinalizedRootProof(ctx context.Context) ([][]byte, error)
 	CurrentSyncCommitteeProof(ctx context.Context) ([][]byte, error)
 	NextSyncCommitteeProof(ctx context.Context) ([][]byte, error)
+	BlockRootProof(ctx context.Context) ([32]byte, [][]byte, error)
 }
 
 // ReadOnlyBeaconState defines a struct which only has read access to beacon state methods.

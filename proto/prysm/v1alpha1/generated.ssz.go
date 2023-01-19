@@ -10062,6 +10062,41 @@ func (b *BeaconStateBellatrix) HashTreeRootWith(hh *ssz.Hasher) (err error) {
 	return
 }
 
+// HashTreeRootWith ssz hashes the BeaconStateBellatrix object with a hasher
+func (b *BeaconStateBellatrix) HashTreeRootBlockRootsWith(hh *ssz.Hasher) (result [32]byte, err error) {
+	indx := hh.Index()
+
+	// Field (5) 'BlockRoots'
+	{
+		if size := len(b.BlockRoots); size != 8192 {
+			err = ssz.ErrVectorLengthFn("--.BlockRoots", size, 8192)
+			return
+		}
+		subIndx := hh.Index()
+		for _, i := range b.BlockRoots {
+			if len(i) != 32 {
+				err = ssz.ErrBytesLength
+				return
+			}
+			hh.Append(i)
+		}
+
+		if ssz.EnableVectorizedHTR {
+			hh.MerkleizeVectorizedHTR(subIndx)
+		} else {
+			hh.Merkleize(subIndx)
+		}
+	}
+
+	if ssz.EnableVectorizedHTR {
+		hh.MerkleizeVectorizedHTR(indx)
+	} else {
+		hh.Merkleize(indx)
+	}
+
+	return hh.HashRoot()
+}
+
 // MarshalSSZ ssz marshals the BeaconStateCapella object
 func (b *BeaconStateCapella) MarshalSSZ() ([]byte, error) {
 	return ssz.MarshalSSZ(b)

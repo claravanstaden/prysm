@@ -106,3 +106,27 @@ func (b *BeaconState) FinalizedRootProof(ctx context.Context) ([][]byte, error) 
 	proof = append(proof, branch...)
 	return proof, nil
 }
+
+func (b *BeaconState) BlockRootProof(ctx context.Context) ([32]byte, [][]byte, error) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	if err := b.initializeMerkleLayers(ctx); err != nil {
+		return [32]byte{}, nil, err
+	}
+	if err := b.recomputeDirtyFields(ctx); err != nil {
+		return [32]byte{}, nil, err
+	}
+
+	proof := make([][]byte, 0)
+	generalizedIndex := nativetypes.BlockRoots.RealPosition()
+
+	leaf, err := b.blockRoots.HashTreeRoot()
+	if err != nil {
+		return [32]byte{}, nil, err
+	}
+
+	branch := fieldtrie.ProofFromMerkleLayers(b.merkleLayers, generalizedIndex)
+	proof = append(proof, branch...)
+	return leaf, proof, nil
+}
