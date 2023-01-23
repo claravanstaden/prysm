@@ -279,7 +279,7 @@ func AddInMixin(root [32]byte, length uint64) ([32]byte, error) {
 func Merkleize(leaves [][]byte) [][][]byte {
 	hashFunc := hash.CustomSHA256Hasher()
 	layers := make([][][]byte, ssz.Depth(uint64(len(leaves)))+1)
-	for len(leaves) != 32 {
+	for len(leaves) < 32 {
 		leaves = append(leaves, make([]byte, 32))
 	}
 	currentLayer := leaves

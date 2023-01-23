@@ -3,6 +3,10 @@ package state_native
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"math"
+	"math/bits"
 
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/state/fieldtrie"
 	nativetypes "github.com/prysmaticlabs/prysm/v3/beacon-chain/state/state-native/types"
@@ -11,7 +15,8 @@ import (
 )
 
 const (
-	finalizedRootIndex = uint64(105) // Precomputed value.
+	finalizedRootIndex  = uint64(105)    // Precomputed value.
+	firstBlockRootIndex = uint64(303104) // Precomputed value.
 )
 
 // FinalizedRootGeneralizedIndex for the beacon state.
@@ -129,4 +134,60 @@ func (b *BeaconState) BlockRootProof(ctx context.Context) ([32]byte, [][]byte, e
 	branch := fieldtrie.ProofFromMerkleLayers(b.merkleLayers, generalizedIndex)
 	proof = append(proof, branch...)
 	return leaf, proof, nil
+}
+
+func (b *BeaconState) BlockRootProofAtIndex(blockIndex int) ([32]byte, [][]byte, [32]byte, error) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	err := b.buildBlockRoots()
+	if err != nil {
+		return [32]byte{}, nil, [32]byte{}, err
+	}
+
+	layers := b.stateFieldLeaves[5].GetLayers()
+
+	leaves := layers[0]
+
+	convertedLeaves := make([][]byte, len(leaves))
+
+	for _, leaf := range leaves {
+		convertedLeaves = append(convertedLeaves, leaf[:])
+	}
+
+	if err := b.initializeMerkleLayersBlockRoots(convertedLeaves); err != nil {
+		return [32]byte{}, nil, [32]byte{}, err
+	}
+
+	proof := make([][]byte, 0)
+
+	//generalizedIndex := blockIndex + int(firstBlockRootIndex)
+
+	blockRootAtIndex := b.blockRoots[blockIndex]
+
+	fmt.Printf("blockRootAtIndex: %s\n", common.BytesToHash(blockRootAtIndex[:]))
+	//fmt.Printf("generalizedIndex: %d\n", generalizedIndex)
+
+	//index := getSubTreeIndex(generalizedIndex)
+	//depth := floorLog2(generalizedIndex)
+
+	//fmt.Printf("index: %d\n", index)
+	//fmt.Printf("depth: %d\n", depth)
+
+	branch := fieldtrie.ProofFromMerkleLayers(b.merkleLayers, blockIndex)
+	proof = append(proof, branch...)
+	root, err := b.blockRoots.HashTreeRoot()
+	if err != nil {
+		return [32]byte{}, nil, [32]byte{}, err
+	}
+
+	return blockRootAtIndex, proof, root, nil
+}
+
+func floorLog2(value int) int {
+	return bits.Len(uint(value)) - 1
+}
+
+func getSubTreeIndex(index int) int {
+	return index % int(math.Pow(2, float64(floorLog2(index))))
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/prysmaticlabs/prysm/v3/config/params"
 	"github.com/prysmaticlabs/prysm/v3/encoding/ssz/detect"
 	"os"
 	"testing"
@@ -172,6 +173,63 @@ func TestBeaconStateMerkleProofs_bellatrix(t *testing.T) {
 func TestBeaconStateBlockRootMerkleProof_bellatrix(t *testing.T) {
 	data, err := os.ReadFile("beacon_state_prysm.ssz")
 	require.NoError(t, err)
+
+	cf, err := detect.FromState(data)
+	require.NoError(t, err)
+
+	state, err := cf.UnmarshalBeaconState(data)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	leaf, proof, err := state.BlockRootProof(ctx)
+	require.NoError(t, err)
+
+	root, err := state.HashTreeRoot(ctx)
+
+	fmt.Printf("leaf: %s\n", common.BytesToHash(leaf[:]))
+
+	for _, proofItem := range proof {
+		fmt.Println(common.BytesToHash(proofItem))
+	}
+
+	fmt.Printf("root: %s\n", common.BytesToHash(root[:]))
+}
+
+func TestBeaconStateBlockRootatIndexMerkleProof_bellatrix(t *testing.T) {
+	data, err := os.ReadFile("beacon_state_prysm.ssz")
+	require.NoError(t, err)
+
+	cf, err := detect.FromState(data)
+	require.NoError(t, err)
+
+	state, err := cf.UnmarshalBeaconState(data)
+	require.NoError(t, err)
+
+	leaf, proof, root, err := state.BlockRootProofAtIndex(0)
+	require.NoError(t, err)
+
+	fmt.Printf("leaf: %s\n", common.BytesToHash(leaf[:]))
+
+	for _, proofItem := range proof {
+		fmt.Println(common.BytesToHash(proofItem))
+	}
+
+	fmt.Printf("root: %s\n", common.BytesToHash(root[:]))
+}
+
+func TestBeaconStateBlockRootLocalNet(t *testing.T) {
+	data, err := os.ReadFile("beacon_state_lodestar_localnet.ssz")
+	require.NoError(t, err)
+
+	localNetConfig := params.MinimalSpecConfig()
+
+	localNetConfig.SlotsPerEpoch = 4
+	localNetConfig.EpochsPerSyncCommitteePeriod = 8
+	localNetConfig.SyncCommitteeSize = 32
+	localNetConfig.SlotsPerHistoricalRoot = 64
+
+	params.OverrideBeaconConfig(localNetConfig)
 
 	cf, err := detect.FromState(data)
 	require.NoError(t, err)

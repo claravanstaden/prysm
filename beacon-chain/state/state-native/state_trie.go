@@ -647,6 +647,14 @@ func (b *BeaconState) initializeMerkleLayers(ctx context.Context) error {
 	return nil
 }
 
+func (b *BeaconState) initializeMerkleLayersBlockRoots(fieldRoots [][]byte) error {
+	layers := stateutil.Merkleize(fieldRoots)
+
+	b.merkleLayers = layers
+
+	return nil
+}
+
 // Recomputes the Merkle layers for the dirty fields in the state.
 //
 // WARNING: Caller must acquire the mutex before using.
@@ -662,6 +670,12 @@ func (b *BeaconState) recomputeDirtyFields(ctx context.Context) error {
 		delete(b.dirtyFields, field)
 	}
 	return nil
+}
+
+func (b *BeaconState) buildBlockRoots() error {
+	field := 5
+
+	return b.resetFieldTrie(nativetypes.FieldIndex(field), b.blockRoots, fieldparams.BlockRootsLength)
 }
 
 // FieldReferencesCount returns the reference count held by each field. This

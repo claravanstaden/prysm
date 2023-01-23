@@ -28,6 +28,10 @@ type FieldTrie struct {
 	isTransferred bool
 }
 
+func (f *FieldTrie) GetLayers() [][]*[32]byte {
+	return f.fieldLayers
+}
+
 // NewFieldTrie is the constructor for the field trie data structure. It creates the corresponding
 // trie according to the given parameters. Depending on whether the field is a basic/composite array
 // which is either fixed/variable length, it will appropriately determine the trie.

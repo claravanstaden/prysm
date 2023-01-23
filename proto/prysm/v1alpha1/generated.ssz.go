@@ -9440,9 +9440,9 @@ func (b *BeaconStateBellatrix) MarshalSSZTo(buf []byte) (dst []byte, err error) 
 func (b *BeaconStateBellatrix) UnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
-	if size < 2736633 {
-		return ssz.ErrSize
-	}
+	//if size < 2736633 {
+	//	return ssz.ErrSize
+	//}
 
 	tail := buf
 	var o7, o9, o11, o12, o15, o16, o21, o24 uint64
